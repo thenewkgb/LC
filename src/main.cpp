@@ -46,56 +46,6 @@ SDL_Surface *loadText(
 	return surface;
 }
 
-SDL_Surface *loadGUIText(
-	TTF_Font* font,
-	const char *text,
-	SDL_Color text_color = {255, 255, 255})
-{
-	SDL_Surface* img1 =
-		IMG_Load("images/lc_bank_1000.png");
-		
-	SDL_Surface *font_surface =
-		TTF_RenderText_Solid(
-			font, text, text_color);
-
-	// new surface creation
-	int border_left = 180;
-	int border_right = 220;
-	int font_w = font_surface->w;
-	int font_h = font_surface->h;
-	font_w += border_right;
-
-	SDL_Surface* result =
-		SDL_CreateRGBSurface(
-			0,
-			font_w, font_h,
-			32,
-			0,0,0,0);
-			
-	// measurements
-	SDL_Rect border{border_left,0,0,0};
-	SDL_Rect crop{0,0,font_w,font_h};
-	SDL_Rect zero{};
-	
-	SDL_BlitSurface(
-		img1,
-		&crop,
-		result,
-		&zero);
-	SDL_BlitSurface(
-		font_surface,
-		NULL,
-		result,
-		&border);
-		
-	SDL_FreeSurface(font_surface);
-	font_surface = nullptr;
-	SDL_FreeSurface(img1);
-	img1 = nullptr;
-			
-	return result;
-}
-
 enum EState
 {
 	LOST = 0,
@@ -171,7 +121,7 @@ class CDot
 	}
 };
 
-struct SHighscore
+struct CHighscore
 {
 	SDL_Surface* title = loadText("High Score");
 	SDL_Surface* high = loadText("0000");
@@ -180,7 +130,7 @@ struct SHighscore
 	SDL_Rect high_rect{0, 1800, 0,0};
 };
 
-struct SPanel
+struct CPanel
 {
 	int x = 0;
 	int y = 800;
@@ -218,138 +168,11 @@ struct SPanel
 	SDL_Surface *fluke = loadText("fluke!");
 };
 
-class CFancyPanel
-{
-	public:
-	CFancyPanel(
-		SDL_Surface* S,
-		TTF_Font* F,
-		CPlayer P) : 
-			window_surface(S),
-			font(F),
-			player(P){};
-			
-	void drawGUI();
-	void clearGUI();
-	void loadText();
-	
-	// never changes
-	/*
-	plenty of time to code at Bloom
-	*/
-	void setGFXPositions()
-	{
-		screen_width = window_surface->w;
-		screen_height = window_surface->h;
-		std::cout << screen_height;
-		
-		// colors
-		monkey_color = SDL_MapRGB(
-			window_surface->format,
-			34,139,34);
-			
-		play_color = SDL_MapRGB(
-			window_surface->format,
-			26,108,128);
-			
-		// positions
-		monkey_rect.x = border;
-		monkey_rect.y = border;
-		monkey_rect.w = screen_width - border*2;
-		monkey_rect.h = monkey_rect.w;
-		
-		in_monkey_rect.x = monkey_rect.x + border;
-		in_monkey_rect.y = monkey_rect.y + border;
-		
-		play_rect.x = border;
-		play_rect.y = monkey_rect.y + monkey_rect.h;
-		play_rect.w = screen_width - border*2;
-		play_rect.h = screen_height-monkey_rect.h-border*2;
-		
-		in_play_rect.x = play_rect.x + border;
-		in_play_rect.y = play_rect.y + border;
-		in_play_rect.w = screen_width - border*4;
-		
-		bank_rect.x = in_play_rect.x + in_play_rect.w;
-		bank_rect.y = in_play_rect.y;
-			
-		//bkgd = IMG_Load("images/bkgd2.png");
-	}
-	
-	private:
-	// vars need setFancyGUI
-	SDL_Surface* window_surface = nullptr;
-	SDL_Surface* bkgd = nullptr;
-	SDL_Surface* test = nullptr;
-	TTF_Font* font = nullptr;
-	
-	int screen_width = 0;
-	int screen_height = 0;
-	int border = 40;
-	
-	CPlayer player;
-	Uint32 monkey_color = 0;
-	Uint32 play_color = 0;
-	
-	SDL_Rect zero{};
-	SDL_Rect in_play_rect{};
-	SDL_Rect in_monkey_rect{};
-	
-	SDL_Rect monkey_rect{};
-	SDL_Rect play_rect{};
-	
-	SDL_Rect bank_rect{};
-};
-
-void CFancyPanel::loadText()
-{
-	std::string bank_s =
-		std::to_string(player.bank_amount);
-		
-	bkgd = IMG_Load("images/bkgd2.png");
-	
-	test = loadGUIText(font, bank_s.c_str());
-}
-
-// reference panel to swap sizes
-void CFancyPanel::drawGUI()
-{
-	SDL_BlitSurface(
-		bkgd,
-		NULL,
-		window_surface,
-		&zero);
-		
-	SDL_FillRect(window_surface, &monkey_rect,
-	monkey_color);
-	SDL_FillRect(window_surface, &play_rect, play_color);
-
-		
-	//test = loadGUIText(font, bank_s.c_str());
-	
-	SDL_BlitSurface(
-		test,
-		NULL,
-		window_surface,
-		&bank_rect);
-}
-
-void CFancyPanel::clearGUI()
-{
-	SDL_FreeSurface(test);
-	test = nullptr;
-	SDL_FreeSurface(bkgd);
-	bkgd = nullptr;
-	SDL_FreeSurface(window_surface);
-	window_surface = nullptr;
-}
-
-
 //
 // custom functions here
 //
 
-void clearGUI(SPanel &panel)
+void clearGUI(CPanel &panel)
 {
 	SDL_FreeSurface(panel.bet);
 	panel.bet = nullptr;
@@ -375,7 +198,7 @@ void clearGUI(SPanel &panel)
 	panel.fluke = nullptr;
 }
 
-void clearHighscore(SHighscore score)
+void clearHighscore(CHighscore score)
 {
 	SDL_FreeSurface(score.high);
 	score.high = nullptr;
@@ -697,7 +520,6 @@ bool checkAllFlukes(
 	if allflukes is a multiple line checker
 	if makes sense to change
 	fluke_amount here
-	and we only want the current line
 	*/
 	int size = all_lines.size();
 
@@ -737,7 +559,7 @@ size for me
 */
 void drawGUI(
 	SDL_Surface *surface,
-	SPanel &panel,
+	CPanel &panel,
 	CPlayer player,
 	EState state)
 {
@@ -942,7 +764,6 @@ void drawGUI(
 		&panel.stake_rect);
 }
 
-
 //
 // player
 //
@@ -952,7 +773,7 @@ CPlayer player)
 {
 	std::string file = "high.txt";
 	std::string score = std::to_string(player.bank_amount);
-	std::string date = "/no date/";
+	std::string date = "/no_date/";
 	
 	CTimer timer;
 	timer.printT();
@@ -1039,9 +860,6 @@ int main(int argc, char *argv[])
 			1,
 			1024) != 0)
 		return 1;
-		
-	TTF_Font* font =
-		TTF_OpenFont("/system/fonts/Roboto-Regular.ttf", 128);
 
 	srand(time(0));
 	//int timer = 0;
@@ -1076,7 +894,7 @@ int main(int argc, char *argv[])
 	if (click2 == NULL)
 		return 1;
 	Mix_Music *potting =
-		Mix_LoadMUS("sfx/misc_06_quiet.ogg");
+		Mix_LoadMUS("sfx/misc_06_very_low.ogg");
 	if (potting == NULL)
 		return 1;
 
@@ -1090,15 +908,11 @@ int main(int argc, char *argv[])
 	//
 
 	CGrid grid;
-	SPanel panel;
-	SHighscore highscore;
+	CPanel panel;
+	CHighscore highscore;
+	// bet, bank, stake
 	CPlayer player(10, 100, 0);
 	EState state = EState::INSTRUCTIONS;
-	
-	CFancyPanel fancy_panel(
-		window_surface, font, player);
-	fancy_panel.setGFXPositions();
-	fancy_panel.loadText();
 
 	// vars
 	int rand_start;
@@ -1110,13 +924,40 @@ int main(int argc, char *argv[])
 	std::vector<CLine> lines;
 
 	bool see_instructions = true;
-	see_instructions= false;
 
 	SDL_Event e{};
 	SDL_TouchFingerEvent f{};
 	SDL_bool betting{SDL_FALSE};
 	SDL_bool running{SDL_TRUE};
 
+	/*
+	CLine line0 = createLine(
+		grid, 1990, 2180);
+	CLine line1 = createLine(
+		grid, 1056, 1908);
+	CLine line2 = createLine(
+		grid, 972, 2154);
+
+	drawGrid(window_surface,
+			 grid);
+	drawLine(window_surface, line0, grid);
+	drawLine(window_surface, line1, grid);
+	drawLine(window_surface, line2, grid);
+
+	lines.push_back(line0);
+	lines.push_back(line1);
+	lines.push_back(line2);
+	
+	int size = lines.size();
+
+	bool i = checkLineData(
+		lines[size-1], lines[size-2]);
+	bool b = ymxc(
+		lines[size-1], lines[size-2]);
+		
+	if(i) std::cout << "Pixels match";
+	if(b)std::cout << "Lines cross and fluke";
+*/
 
 	//
 	// instructions
@@ -1150,11 +991,11 @@ int main(int argc, char *argv[])
 		&highscore.high_rect);
 
 	
-	// test
-	
 	//
 	// go
 	//
+	
+	
 
 	while (running)
 	{
@@ -1166,7 +1007,6 @@ int main(int argc, char *argv[])
 			{
 				std::cout << "Quit and save";
 				quitAndSave(player);
-				running = SDL_FALSE;
 				break;
 			}
 			case SDL_FINGERDOWN:
@@ -1416,6 +1256,19 @@ int main(int argc, char *argv[])
 			}
 
 			// keep hold
+			/*
+			if i bet 100 twice
+			stake > 0
+			bank is 0
+			bet is 0
+			prev bet is 0 because the loop
+			below takes last bet
+			
+			if i bet 1 line
+			bet 50
+			bank 50
+			prev not set
+			*/
 			if (player.bet_amount > 0 &&
 				player.bank_amount == 0)
 				player.prev_bet = player.bet_amount;
@@ -1447,11 +1300,7 @@ int main(int argc, char *argv[])
 		//
 		// end of loop
 		//
-		if(!see_instructions)
-		{
-			fancy_panel.drawGUI();
-		}
-/*
+
 		if (!see_instructions)
 		{
 			clearSurface(
@@ -1461,7 +1310,6 @@ int main(int argc, char *argv[])
 				panel, player,
 				state);
 		}
-*/
 
 		SDL_UpdateWindowSurface(
 			window);
@@ -1472,9 +1320,8 @@ int main(int argc, char *argv[])
 	//
 
 	lines.clear();
-	//clearGUI(panel);
+	clearGUI(panel);
 	//clearHighscore(highscore);
-	fancy_panel.clearGUI();
 
 	Mix_FreeChunk(fluke_wav);
 	Mix_FreeMusic(click);
@@ -1483,14 +1330,10 @@ int main(int argc, char *argv[])
 
 	Mix_CloseAudio();
 	Mix_Quit();
-	std::cout << "Mix Quit. ";
 	IMG_Quit();
-	TTF_CloseFont(font);
 	TTF_Quit();
-	std::cout << "TTF Quit. ";
 	SDL_DestroyWindow(window);
 	SDL_Quit();
-	std::cout << "SDL Quit. ";
 
 	return 0;
 }
